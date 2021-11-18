@@ -1,0 +1,16 @@
+{
+  "name": "elastic-connector-musics",
+  "config": {
+    "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+    "connection.url": "http://elastic:9200",
+    "tasks.max": "1",
+    "topics": "musics",
+    "write.method": "INSERT",
+    "behavior.on.malformed.documents": "IGNORE",
+    "behavior.on.null.values": "IGNORE",
+    "transforms": "extract,key",
+    "transforms.extract.type": "io.debezium.transforms.ExtractNewRecordState",
+    "transforms.key.type": "org.apache.kafka.connect.transforms.ExtractField$Key",
+    "transforms.key.field": "code"
+  }
+}

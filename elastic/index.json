@@ -1,0 +1,48 @@
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "custom_analyzer": {
+          "type": "custom",
+          "tokenizer": "whitespace",
+          "filter": [
+            "lowercase",
+            "asciifolding",
+            "custom_stop_words",
+            "custom_stemmer",
+            "trim",
+            "unique",
+            "custom_word_delimiter_graph",
+            "flatten_graph"
+          ]
+        }
+      },
+      "filter": {
+        "custom_stop_words": {
+          "type": "stop",
+          "stopwords": "_brazilian_"
+        },
+        "custom_stemmer": {
+          "type": "stemmer",
+          "language": "brazilian"
+        },
+        "custom_word_delimiter_graph": {
+          "type": "word_delimiter_graph",
+          "catenate_all": true
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "code": {
+        "type": "integer"
+      },
+      "name": {
+        "type": "text",
+        "analyzer": "custom_analyzer",
+        "index": true
+      }
+    }
+  }
+}

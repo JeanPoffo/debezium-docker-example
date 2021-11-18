@@ -1,0 +1,114 @@
+version: '3.3'
+  
+services:
+
+  elastic:
+    image: elasticsearch:7.14.2
+    container_name: debezium_elastic
+    environment:
+      - node.name=es01
+      - cluster.name=es-docker-cluster
+      - cluster.initial_master_nodes=es01
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms2G -Xmx2G"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - 9200:9200
+    networks:
+      - default
+
+  kibana:
+    image: kibana:7.14.2
+    container_name: debezium_kibana
+    environment:
+      ELASTICSEARCH_HOSTS: '["http://elastic:9200"]'
+    ports:
+      - 5601:5601
+    networks:
+      - default
+    depends_on:
+      - elastic
+
+  postgres:
+    image: postgres:13.4-alpine
+    container_name: debezium_postgres
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+    command: [ "postgres", "-c", "wal_level=logical", "-c", "listen_addresses=*" ]
+    volumes:
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - 5432:5432
+    networks:
+      - default
+
+  pgadmin:
+    image: dpage/pgadmin4:6.1
+    container_name: debezium_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: root@root.com
+      PGADMIN_DEFAULT_PASSWORD: root
+    ports:
+      - 16543:80
+    depends_on:
+      - postgres
+    networks:
+      - default
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.0.0
+    container_name: debezium_zookeeper
+    restart: always
+    environment:
+      - ZOOKEEPER_CLIENT_PORT=2181
+      - ZOOKEEPER_SERVER_ID=1
+    ports:
+      - 2181:2181
+    networks:
+      - default
+  
+  kafka:
+    image: confluentinc/cp-kafka:7.0.0
+    container_name: debezium_kafka
+    restart: always
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      - KAFKA_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+    ports:
+      - 9092:9092
+      - 29092:29092
+    depends_on:
+      - zookeeper
+    networks:
+      - default
+  
+  debezium_connect:
+    build: ./debezium_connect
+    container_name: debezium_connect
+    restart: always
+    environment:
+      - GROUP_ID=1
+      - BOOTSTRAP_SERVERS=kafka:29092
+      - CONFIG_STORAGE_TOPIC=connect_config
+      - OFFSET_STORAGE_TOPIC=connect_offsets
+      - STATUS_STORAGE_TOPIC=connect_status
+    ports:
+      - 8083:8083
+    depends_on:
+      - postgres
+      - kafka
+    networks:
+      - default
+
+networks: 
+  default:
+    driver: bridge
