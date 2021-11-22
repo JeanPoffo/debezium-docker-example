@@ -7,9 +7,11 @@
     "topics": "musics",
     "write.method": "INSERT",
     "behavior.on.malformed.documents": "IGNORE",
-    "behavior.on.null.values": "IGNORE",
+    "behavior.on.null.values": "DELETE",
     "transforms": "extract,key",
     "transforms.extract.type": "io.debezium.transforms.ExtractNewRecordState",
+    "transforms.extract.drop.tombstones": false,
+    "transforms.extract.drop.deletes": false,
     "transforms.key.type": "org.apache.kafka.connect.transforms.ExtractField$Key",
     "transforms.key.field": "code"
   }
